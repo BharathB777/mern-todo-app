@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const Todo = require('./models/Todo');
+const Todo = require('./models/Todo'); // make sure this path is correct
 
 const app = express();
 const PORT = 5000;
@@ -9,52 +9,55 @@ const PORT = 5000;
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
-mongoose.connect('mongodb+srv://todo:todo123@cluster0.vig1isr.mongodb.net/todoapp?retryWrites=true&w=majority&appName=Cluster0', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-});
+mongoose.connect('mongodb+srv://todo:todo123@cluster0.vig1isr.mongodb.net/todoapp?retryWrites=true&w=majority&appName=Cluster0')
+  .then(() => {
+    console.log('✅ Connected to MongoDB Atlas');
+  })
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err);
+  });
 
-// Routes
+
+// ✅ Routes
 app.get('/todos', async (req, res) => {
-    const todos = await Todo.find();
-    res.json(todos);
+  const todos = await Todo.find();
+  res.json(todos);
 });
 
 app.post('/todos', async (req, res) => {
-    const newTodo = new Todo({
-        text: req.body.text
-    });
-    await newTodo.save();
-    res.json(newTodo);
+  console.log("Request Body:", req.body); // 👈 Add this
+  const newTodo = new Todo({
+    text: req.body.text
+  });
+  await newTodo.save();
+  res.json(newTodo);
+});
+
+
+app.put('/todos/:id', async (req, res) => {
+  const { completed } = req.body;
+  const updatedTodo = await Todo.findByIdAndUpdate(
+    req.params.id,
+    { completed },
+    { new: true }
+  );
+  res.json(updatedTodo);
 });
 
 app.delete('/todos/:id', async (req, res) => {
-    await Todo.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Todo deleted' });
+  await Todo.findByIdAndDelete(req.params.id);
+  res.json({ message: 'Todo deleted' });
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
 app.put('/todos/:id', async (req, res) => {
-  const { completed, text } = req.body;
-
-  const updateData = {};
-  if (completed !== undefined) updateData.completed = completed;
-  if (text !== undefined) updateData.text = text;
-
-  try {
-    const updatedTodo = await Todo.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true }
-    );
-    res.json(updatedTodo);
-  } catch (error) {
-    console.error('Error updating todo:', error);
-    res.status(500).json({ error: 'Failed to update todo' });
-  }
+  const { completed } = req.body;
+  const updatedTodo = await Todo.findByIdAndUpdate(
+    req.params.id,
+    { completed },
+    { new: true }
+  );
+  res.json(updatedTodo);
 });
-
-
